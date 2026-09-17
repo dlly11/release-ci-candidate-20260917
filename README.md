@@ -70,3 +70,7 @@ when dependencies must come from an approved local source.
 See [LICENSE](LICENSE) for this project's licensing terms.
 
 Created from the [Python and C monorepo template](https://github.com/dlly11/python-c-monorepo-template), version 2.0.2.
+
+## Experiment
+
+Exercise the generated release workflow with protected merges.
