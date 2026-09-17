@@ -74,3 +74,5 @@ Created from the [Python and C monorepo template](https://github.com/dlly11/pyth
 ## Experiment
 
 Exercise the generated release workflow with protected merges.
+
+Release CI experiment: non-metadata changes must receive full validation.
