@@ -78,3 +78,5 @@ Exercise the generated release workflow with protected merges.
 Release CI experiment: non-metadata changes must receive full validation.
 
 The rebase release experiment uses the same required checks.
+
+The squash release experiment uses the same required checks.
