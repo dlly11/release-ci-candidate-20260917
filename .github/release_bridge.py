@@ -20,7 +20,7 @@ from repo_tools.commands.check_release_automation import eligible_pr
 from repo_tools.conventional_commits import valid_subject
 from repo_tools.github_api import api, items
 from repo_tools.github_checks import check_ci_run, check_evidence, merged_pr, verify_commit
-from repo_tools.release_changes import branch_at
+from repo_tools.release_changes import branch_at, managed_pr
 
 REPO = os.environ["GITHUB_REPOSITORY"]
 EVENT = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
@@ -186,11 +186,25 @@ def verify() -> None:
     print(f"Verified merged release PR #{pr['number']}: {len(commits)} commit(s)")
 
 
+def await_head(number: int, branch: str, head: str) -> None:
+    """Wait for GitHub's PR view to catch up with the just-pushed release branch."""
+    deadline = time.monotonic() + 60
+    while True:
+        pr = current_pr(number)
+        require(pr["state"] == "open" and managed_pr(pr, REPO, branch))
+        if pr["head"]["sha"] == head:
+            return
+        require(time.monotonic() < deadline)
+        print(f"Waiting for PR #{number} head {pr['head']['sha']} to reach {head}", flush=True)
+        time.sleep(2)
+
+
 def coordinate() -> None:
     """Explicitly await token-dispatched runs; their workflow_run callbacks are suppressed."""
     number = int(os.environ["RELEASE_PR_NUMBER"])
     head = os.environ["RELEASE_HEAD"]
     branch = os.environ["RELEASE_BRANCH"]
+    await_head(number, branch, head)
     eligible_pr(REPO, number, branch, head, root=ROOT)
     runs = []
     for filename, context, inputs in (
