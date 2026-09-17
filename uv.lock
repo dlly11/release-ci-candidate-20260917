@@ -821,12 +821,12 @@ wheels = [
 
 [[package]]
 name = "release-candidate-core"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "python/packages/core" }
 
 [[package]]
 name = "release-candidate-package-a"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "python/packages/package_a" }
 dependencies = [
     { name = "release-candidate-core" },
@@ -837,7 +837,7 @@ requires-dist = [{ name = "release-candidate-core", editable = "python/packages/
 
 [[package]]
 name = "release-candidate-package-a-cli"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "python/apps/package_a_cli" }
 dependencies = [
     { name = "release-candidate-package-a" },
@@ -848,7 +848,7 @@ requires-dist = [{ name = "release-candidate-package-a", editable = "python/pack
 
 [[package]]
 name = "release-candidate-package-b"
-version = "0.2.2"
+version = "0.2.3"
 source = { editable = "python/packages/package_b" }
 dependencies = [
     { name = "release-candidate-core" },
@@ -859,7 +859,7 @@ requires-dist = [{ name = "release-candidate-core", editable = "python/packages/
 
 [[package]]
 name = "release-ci-candidate-20260917"
-version = "0.2.2"
+version = "0.2.3"
 source = { virtual = "." }
 
 [package.dev-dependencies]
