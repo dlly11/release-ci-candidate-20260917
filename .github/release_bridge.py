@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -30,22 +31,34 @@ def require(condition: bool) -> None:
         raise ValueError("Release bridge validation failed")
 
 
-def post(path: str, data: dict) -> None:
-    subprocess.run(
-        ["gh", "api", "--method", "POST", f"repos/{REPO}/{path}", "--input", "-"],
+def post(path: str, data: dict) -> dict | None:
+    result = subprocess.run(
+        [
+            "gh",
+            "api",
+            "-H",
+            "X-GitHub-Api-Version: 2026-03-10",
+            "--method",
+            "POST",
+            f"repos/{REPO}/{path}",
+            "--input",
+            "-",
+        ],
         input=json.dumps(data),
         text=True,
         check=True,
-        stdout=subprocess.DEVNULL,
+        capture_output=True,
     )
+    return json.loads(result.stdout) if result.stdout.strip() else None
 
 
 def current_pr(number: int) -> dict:
     return api(f"repos/{REPO}/pulls/{number}")
 
 
-def publish() -> None:
-    trigger = EVENT["workflow_run"]
+def publish(trigger: dict | None = None) -> None:
+    if trigger is None:
+        trigger = EVENT["workflow_run"]
     if trigger["event"] != "workflow_dispatch":
         return
     branch = branch_at(ROOT, "HEAD")
@@ -136,7 +149,7 @@ def publish() -> None:
     print(f"Published {state}: {context} for PR #{pr['number']} at {head}")
 
 
-def dispatch() -> None:
+def dispatch() -> str | None:
     pr = EVENT["pull_request"]
     if not pr["merged"] or pr["base"]["ref"] != "main":
         return
@@ -155,6 +168,7 @@ def dispatch() -> None:
         {"event_type": "lab-merged-release", "client_payload": {"pr": pr["number"], "head": head}},
     )
     print(f"Dispatched merged release verification for PR #{pr['number']} at {head}")
+    return head
 
 
 def verify() -> None:
@@ -172,5 +186,87 @@ def verify() -> None:
     print(f"Verified merged release PR #{pr['number']}: {len(commits)} commit(s)")
 
 
+def coordinate() -> None:
+    """Explicitly await token-dispatched runs; their workflow_run callbacks are suppressed."""
+    number = int(os.environ["RELEASE_PR_NUMBER"])
+    head = os.environ["RELEASE_HEAD"]
+    branch = os.environ["RELEASE_BRANCH"]
+    eligible_pr(REPO, number, branch, head, root=ROOT)
+    runs = []
+    for filename, context, inputs in (
+        ("ci.yml", "CI result", {"release-pr-number": str(number), "expected-head": head}),
+        ("pr-title.yml", "Conventional PR title", {"pr-number": str(number)}),
+    ):
+        post(
+            f"statuses/{head}",
+            {
+                "context": context,
+                "state": "pending",
+                "description": "Awaiting authoritative validation",
+            },
+        )
+        details = post(
+            f"actions/workflows/{filename}/dispatches", {"ref": branch, "inputs": inputs}
+        )
+        require(details is not None and isinstance(details.get("workflow_run_id"), int))
+        if details is None:
+            raise ValueError("Dispatch did not return a run ID")
+        runs.append(details["workflow_run_id"])
+        print(f"Dispatched {filename}: {details['html_url']}", flush=True)
+    deadline = time.monotonic() + 35 * 60
+    remaining = set(runs)
+    while remaining and time.monotonic() < deadline:
+        pr = current_pr(number)
+        require(pr["state"] == "open" and pr["head"]["sha"] == head)
+        for run_id in sorted(remaining):
+            run = api(f"repos/{REPO}/actions/runs/{run_id}")
+            require(run["head_sha"] == head and run["head_branch"] == branch)
+            if run["status"] == "completed":
+                publish(run)
+                require(run["conclusion"] == "success")
+                remaining.remove(run_id)
+                print(f"Verified completed run {run_id}", flush=True)
+        if remaining:
+            time.sleep(10)
+    require(not remaining)
+
+
+def route() -> None:
+    """Start merged verification, then explicitly start Release after it succeeds."""
+    merged_head = EVENT["pull_request"]["merge_commit_sha"]
+    query = urlencode(
+        {"branch": "main", "event": "repository_dispatch", "head_sha": merged_head, "per_page": 100}
+    )
+    endpoint = f"repos/{REPO}/actions/workflows/ci.yml/runs?{query}"
+    before = max((run["id"] for run in items(endpoint, "workflow_runs")), default=0)
+    head = dispatch()
+    if head is None:
+        return
+    deadline = time.monotonic() + 7 * 60
+    while time.monotonic() < deadline:
+        require(api(f"repos/{REPO}/branches/main")["commit"]["sha"] == head)
+        candidates = [run for run in items(endpoint, "workflow_runs") if run["id"] > before]
+        if candidates:
+            run = max(candidates, key=lambda value: value["id"])
+            if run["status"] == "completed":
+                require(run["conclusion"] == "success")
+                jobs = items(
+                    f"repos/{REPO}/actions/runs/{run['id']}/jobs?filter=latest&per_page=100", "jobs"
+                )
+                verified = [job for job in jobs if job["name"] == "Merged PR verification"]
+                require(len(verified) == 1 and verified[0]["conclusion"] == "success")
+                details = post("actions/workflows/release.yml/dispatches", {"ref": "main"})
+                print(f"Explicitly dispatched Release after CI {run['id']}: {details}")
+                return
+        time.sleep(10)
+    raise ValueError("Timed out waiting for merged release verification")
+
+
 if __name__ == "__main__":
-    {"publish": publish, "dispatch": dispatch, "verify": verify}[sys.argv[1]]()
+    {
+        "publish": publish,
+        "dispatch": dispatch,
+        "verify": verify,
+        "coordinate": coordinate,
+        "route": route,
+    }[sys.argv[1]]()

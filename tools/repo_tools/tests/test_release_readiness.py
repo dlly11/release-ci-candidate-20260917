@@ -49,7 +49,7 @@ def release_context(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, dict[s
             return {"id": 42}
         if "/runs?" in endpoint:
             assert f"head_sha={SHA}" in endpoint
-            assert "event=push" in endpoint
+            assert "event=push" in endpoint or "event=repository_dispatch" in endpoint
             return {"workflow_runs": state["runs"]}
         return next(run for run in state["runs"] if endpoint.endswith(f"/runs/{run['id']}"))
 

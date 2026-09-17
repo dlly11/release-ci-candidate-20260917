@@ -20,6 +20,7 @@ permissions:
   actions: write
   contents: write
   issues: write
+  statuses: write
   pull-requests: write
 
 jobs:
@@ -33,7 +34,7 @@ jobs:
        github.event.workflow_run.head_repository.full_name == github.repository &&
        github.event.workflow_run.repository.full_name == github.repository)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     outputs:
       release-created: ${{ steps.release.outputs.release_created }}
       tag-name: ${{ steps.release.outputs.tag_name }}
@@ -127,16 +128,21 @@ jobs:
           fi
           echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
 
-      - name: Dispatch authoritative release PR validation
+      - name: Check out trusted coordinator from main
+        if: steps.release.outputs.prs_created == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Dispatch and verify authoritative release PR validation
         if: steps.release.outputs.prs_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_BRANCH: ${{ steps.release-pr.outputs.branch }}
           RELEASE_PR_NUMBER: ${{ steps.release-pr.outputs.number }}
           RELEASE_HEAD: ${{ steps.release-head.outputs.sha }}
-        run: |
-          gh workflow run ci.yml --ref "${RELEASE_BRANCH}" -f "release-pr-number=${RELEASE_PR_NUMBER}" -f "expected-head=${RELEASE_HEAD}"
-          gh workflow run pr-title.yml --ref "${RELEASE_BRANCH}" -f "pr-number=${RELEASE_PR_NUMBER}"
+        run: python .github/release_bridge.py coordinate
 
       - name: Validate the synchronized release PR for auto-merge
         if: steps.release.outputs.prs_created == 'true' && steps.automation.outputs.auto-merge == 'true'
