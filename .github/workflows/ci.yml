@@ -57,8 +57,9 @@ jobs:
   ci-context:
     name: CI context
     if: >-
-      (github.event_name != 'push' && github.event_name != 'repository_dispatch') ||
-      (github.event.before == '0000000000000000000000000000000000000000' || github.event.before == '0000000000000000000000000000000000000000000000000000000000000000')
+      github.event_name != 'repository_dispatch' &&
+      (github.event_name != 'push' ||
+      github.event.before == '0000000000000000000000000000000000000000' || github.event.before == '0000000000000000000000000000000000000000000000000000000000000000')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
