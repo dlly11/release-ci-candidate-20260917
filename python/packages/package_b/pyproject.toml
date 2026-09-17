@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "release-candidate-package-b"
+version = "0.1.0"
+description = "Example Python Package B built independently on release-candidate-core."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["release-candidate-core>=0.1.0"]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[[project.authors]]
+name = "Release CI Experiment"
+email = "release-lab@example.com"
+
+[project.urls]
+Repository = "https://github.com/dlly11/release-ci-candidate-20260917"
+Documentation = "https://dlly11.github.io/release-ci-candidate-20260917/"
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+release_candidate_package_b = ["py.typed"]

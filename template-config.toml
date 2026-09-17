@@ -1,0 +1,36 @@
+# Repository creation recipe; contains public project identity, never credentials.
+schema_version = 1
+
+[project]
+name = "Release CI Candidate"
+slug = "release-ci-candidate-20260917"
+description = "Public sample repository for release workflow experiments."
+prefix = "release_candidate"
+version = "0.1.0"
+
+[github]
+owner = "dlly11"
+repository = "release-ci-candidate-20260917"
+docs_url = "https://dlly11.github.io/release-ci-candidate-20260917/"
+
+[author]
+name = "Release CI Experiment"
+email = "release-lab@example.com"
+
+[security]
+contact = "https://github.com/dlly11/release-ci-candidate-20260917/security/advisories/new"
+
+[ownership]
+default = ["@dlly11"]
+rules = []
+
+[license]
+choice = "MIT"
+holder = "Release CI Experiment"
+year = 2026
+text = ""
+
+[template]
+version = "2.0.2"
+digest = "ef924226dde71960eea326df8e4bed149e1f0aa97799baa3ddda6b5a5651660b"
+source = "https://github.com/dlly11/python-c-monorepo-template"
