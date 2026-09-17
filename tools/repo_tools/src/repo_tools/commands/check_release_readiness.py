@@ -87,8 +87,15 @@ def ready(
         ci_event = "repository_dispatch"
     query = urlencode({"branch": "main", "event": ci_event, "head_sha": sha, "per_page": 100})
     runs = api(f"repos/{repository}/actions/workflows/{workflow_id}/runs?{query}")["workflow_runs"]
+    if not runs and not automatic and not recovery:
+        ci_event = "repository_dispatch"
+        query = urlencode({"branch": "main", "event": ci_event, "head_sha": sha, "per_page": 100})
+        runs = api(f"repos/{repository}/actions/workflows/{workflow_id}/runs?{query}")[
+            "workflow_runs"
+        ]
     if not runs:
-        raise ValueError(f"no {ci_event} CI run exists for main commit {sha}")
+        kind = "push CI or repository_dispatch" if not recovery else ci_event
+        raise ValueError(f"no {kind} CI run exists for main commit {sha}")
     # Do not filter by success: a newer failed or in-progress run invalidates an older success.
     latest = max(runs, key=lambda candidate: candidate["id"])
     if recovery and latest["id"] != int(recovery):

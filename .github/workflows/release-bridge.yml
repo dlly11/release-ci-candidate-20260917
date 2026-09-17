@@ -33,9 +33,10 @@ jobs:
     name: Dispatch verified merge processing
     if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true && contains(github.event.pull_request.title, '[skip ci]')
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 10
     permissions:
       contents: write
+      actions: write
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -43,6 +44,6 @@ jobs:
           ref: main
           fetch-depth: 0
           persist-credentials: false
-      - run: python .github/release_bridge.py dispatch
+      - run: python .github/release_bridge.py route
         env:
           GH_TOKEN: ${{ github.token }}
