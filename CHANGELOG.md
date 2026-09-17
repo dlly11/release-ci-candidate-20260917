@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/dlly11/release-ci-candidate-20260917/compare/v0.2.2...v0.2.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* clarify the squash release experiment ([538b260](https://github.com/dlly11/release-ci-candidate-20260917/commit/538b260e40a6fc96e817946da7eeedd44b731d67))
+
 ## [0.2.2](https://github.com/dlly11/release-ci-candidate-20260917/compare/v0.2.1...v0.2.2) (2026-09-17)
 
 
