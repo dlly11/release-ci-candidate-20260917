@@ -2,6 +2,7 @@ name: Release event bridge (prototype)
 on:
   workflow_run:
     workflows: [CI, PR title]
+    branches: ["release-please--branches--main*"]
     types: [in_progress, completed]
   pull_request_target:
     branches: [main]
