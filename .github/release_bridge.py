@@ -163,12 +163,12 @@ def verify() -> None:
     require(os.environ["GITHUB_EVENT_NAME"] == "repository_dispatch")
     require(os.environ["GITHUB_REF"] == "refs/heads/main" and payload["head"] == head)
     require(api(f"repos/{REPO}/branches/main")["commit"]["sha"] == head)
-    pr = merged_pr(REPO, head, root=ROOT)
+    pr, _ = merged_pr(REPO, head, root=ROOT)
     require(pr["number"] == payload["pr"])
     require(pr["head"]["ref"] == branch_at(ROOT, "HEAD"))
     workflow = api(f"repos/{REPO}/actions/workflows/ci.yml")
     commits = verify_commit(REPO, head, workflow["id"], root=ROOT)
-    require(commits and commits[-1] == head)
+    require(bool(commits) and commits[-1] == head)
     print(f"Verified merged release PR #{pr['number']}: {len(commits)} commit(s)")
 
 
