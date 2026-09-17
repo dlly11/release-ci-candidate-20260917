@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/dlly11/release-ci-candidate-20260917/compare/v0.2.1...v0.2.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* clarify the rebase release experiment ([801c33e](https://github.com/dlly11/release-ci-candidate-20260917/commit/801c33ef9678c2dc93d102b694f77378e980b6e3))
+
 ## [0.2.1](https://github.com/dlly11/release-ci-candidate-20260917/compare/v0.2.0...v0.2.1) (2026-09-17)
 
 
